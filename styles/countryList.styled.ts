@@ -46,7 +46,7 @@ export const PageContainer = styled.div`
 
 export const Header = styled.header`
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
 `;
 
 export const Title = styled.h1`
