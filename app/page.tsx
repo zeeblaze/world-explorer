@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ApolloClient,
@@ -15,6 +15,56 @@ import {
   MdClose,
   MdCheckCircleOutline,
 } from 'react-icons/md';
+import {
+  LoadingContainer,
+  LoadingContent,
+  Spinner,
+  LoadingText,
+  ErrorContainer,
+  PageContainer,
+  Header,
+  Title,
+  TitleSpan,
+  Subtitle,
+  ContentContainer,
+  TopControls,
+  SearchWrapper,
+  SearchInput,
+  IconWrapper,
+  ControlsRight,
+  SelectedText,
+  CompareButton,
+  TableContainer,
+  StyledTable,
+  TableHead,
+  Th,
+  TableBody,
+  TableRow,
+  Td,
+  TextTd,
+  FlagImage,
+  PickButton,
+  NoResults,
+  PaginationContainer,
+  PaginationButton,
+  PaginationInfo,
+  ModalOverlay,
+  ModalBackdrop,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  CloseButton,
+  ModalBody,
+  ModalContentFlex,
+  CountryCard,
+  CardHeader,
+  ModalFlagImage,
+  CardTitle,
+  CardBody,
+  CardText,
+  CardLabel,
+  Footer,
+} from '@/styles/countryList.styled';
 
 interface Country {
   name: {
@@ -66,6 +116,8 @@ const CountriesTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountries, setSelectedCountries] = useState<Country[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 10;
 
   const processedCountries: Country[] = useMemo(() => {
     if (!data?.countries) return [];
@@ -75,23 +127,9 @@ const CountriesTable: React.FC = () => {
     }));
   }, [data?.countries]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-white-900"></div>
-          <div className="mt-4 text-xl font-semibold">Loading countries...</div>
-        </div>
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-r from-red-500 to-pink-500 text-white">
-        <div className="text-xl font-semibold">Error: {error.message}</div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm]);
 
   const filteredCountries = processedCountries.filter((country) => {
     const term = searchTerm.toLowerCase();
@@ -101,6 +139,12 @@ const CountriesTable: React.FC = () => {
       country.region.toLowerCase().includes(term)
     );
   });
+
+  const totalPages = Math.ceil(filteredCountries.length / pageSize);
+  const displayedCountries = filteredCountries.slice(
+    currentPage * pageSize,
+    (currentPage + 1) * pageSize
+  );
 
   const handleRowClick = (country: Country) => {
     router.push(`/country/${encodeURIComponent(country.name.common)}`);
@@ -121,189 +165,177 @@ const CountriesTable: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <header className="mb-8 text-center">
-        <h1 className="text-5xl font-extrabold text-gray-800 tracking-tight">
-          <span className="text-blue-600">Global</span> Explorer
-        </h1>
-        <p className="text-lg text-gray-600 mt-3">
-          Explore the world's countries and compare them.
-        </p>
-      </header>
-      <div className="container mx-auto px-4">
-        {/* Top controls */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-          <div className="relative w-full md:w-1/2">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search countries..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MdSearch className="h-5 w-5 text-gray-400" />
-            </div>
-          </div>
-          <div className="flex items-center space-x-2 mt-2 md:mt-0">
-            <p className="text-sm text-gray-600">
-              <span className="font-medium">
-                {selectedCountries.length}/2
-              </span>{' '}
-              countries selected
-            </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              disabled={selectedCountries.length !== 2}
-              className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <MdCompareArrows className="mr-2 h-5 w-5" />
-              Compare
-            </button>
-          </div>
-        </div>
-        {/* Table container */}
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto divide-y divide-gray-200">
-            <thead className="bg-blue-200">
-              <tr>
-                <th className="px-1 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Pick
-                </th>
-                <th className="px-1 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Flag
-                </th>
-                <th className="px-1 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-1 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Region
-                </th>
-                <th className="px-1 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Population
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCountries.map((country) => (
-                <tr
-                  key={country.cca3}
-                  onClick={() => handleRowClick(country)}
-                  className="hover:bg-gray-100 transition duration-200 cursor-pointer"
+    <>
+      {loading ? (
+        <LoadingContainer>
+          <LoadingContent>
+            <Spinner />
+            <LoadingText>Loading countries...</LoadingText>
+          </LoadingContent>
+        </LoadingContainer>
+      ) : error ? (
+        <ErrorContainer>
+          <LoadingText>Error: {error.message}</LoadingText>
+        </ErrorContainer>
+      ) : (
+        <PageContainer>
+          <Header>
+            <Title>
+              <TitleSpan>Global</TitleSpan> Explorer
+            </Title>
+            <Subtitle>
+              Explore the world's countries and compare them.
+            </Subtitle>
+          </Header>
+          <ContentContainer>
+            {/* Top Controls */}
+            <TopControls>
+              <SearchWrapper>
+                <SearchInput
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search countries..."
+                />
+                <IconWrapper>
+                  <MdSearch size={20} color="#9ca3af" />
+                </IconWrapper>
+              </SearchWrapper>
+              <ControlsRight>
+                <SelectedText>
+                  <strong>{selectedCountries.length}/2</strong> countries selected
+                </SelectedText>
+                <CompareButton
+                  onClick={() => setIsModalOpen(true)}
+                  disabled={selectedCountries.length !== 2}
                 >
-                  <td className="px-2 py-2">
-                    <button
-                      onClick={(e) => toggleSelectCountry(e, country)}
-                      className={`flex items-center justify-center w-6 h-6 rounded-full ${
-                        selectedCountries.some((c) => c.cca3 === country.cca3)
-                          ? 'bg-blue-500'
-                          : 'bg-gray-200'
-                      } ${
-                        !selectedCountries.some((c) => c.cca3 === country.cca3) &&
-                        selectedCountries.length >= 2
-                          ? 'opacity-50 cursor-not-allowed'
-                          : ''
-                      }`}
-                      disabled={
-                        !selectedCountries.some((c) => c.cca3 === country.cca3) &&
-                        selectedCountries.length >= 2
-                      }
-                    >
-                      {selectedCountries.some((c) => c.cca3 === country.cca3) && (
-                        <MdCheckCircleOutline className="text-white" />
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-2 py-2">
-                    <img
-                      src={country.flags.png}
-                      alt={country.flags.alt}
-                      className="w-10 h-6 object-contain rounded"
-                    />
-                  </td>
-                  <td className="px-2 py-2 text-sm text-gray-900">
-                    {country.name.common}
-                  </td>
-                  <td className="px-2 py-2 text-sm text-gray-900">
-                    {country.region}
-                  </td>
-                  <td className="px-2 py-2 text-sm text-gray-900">
-                    {country.population.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {filteredCountries.length === 0 && (
-          <div className="p-4 text-center text-gray-600">
-            No countries found for "{searchTerm}"
-          </div>
-        )}
-      </div>
-
-      {/* Comparison Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 transition-opacity duration-300">
-          <div
-            className="absolute inset-0 bg-black opacity-60 transition-opacity duration-300"
-            onClick={() => setIsModalOpen(false)}
-          ></div>
-          <div className="bg-white rounded-lg shadow-2xl z-10 max-w-4xl w-full mx-4 transform transition-all duration-300">
-            <div className="flex justify-between items-center bg-blue-50 border-b border-gray-300 px-6 py-4 rounded-t-lg">
-              <h2 className="text-2xl font-bold text-gray-800">
-                Country Comparison
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition"
-              >
-                <MdClose className="h-6 w-6 text-blue-700" />
-              </button>
-            </div>
-            <div className="px-6 py-6">
-              <div className="flex flex-col md:flex-row justify-around">
-                {selectedCountries.map((country) => (
-                  <div
-                    key={country.cca3}
-                    className="w-full md:w-1/2 p-6 border border-gray-300 rounded-lg shadow-md"
-                  >
-                    <div className="text-center">
-                      <img
-                        src={country.flags.png}
-                        alt={country.flags.alt}
-                        className="w-24 h-16 object-contain mx-auto rounded"
-                      />
-                      <h3 className="text-xl font-semibold mt-4 text-gray-800">
-                        {country.name.common}
-                      </h3>
-                    </div>
-                    <div className="mt-6 space-y-3 text-center">
-                      <p className="text-gray-600">
-                        <span className="font-medium">Population:</span>{' '}
-                        {country.population.toLocaleString()}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-medium">Area:</span>{' '}
-                        {country.area.toLocaleString()} km²
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-medium">GDP:</span>{' '}
-                        {country.gdp?.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+                  <MdCompareArrows size={20} style={{ marginRight: '0.5rem' }} />
+                  Compare
+                </CompareButton>
+              </ControlsRight>
+            </TopControls>
+            {/* Table */}
+            <TableContainer>
+              <StyledTable>
+                <TableHead>
+                  <tr>
+                    <Th>Pick</Th>
+                    <Th>Flag</Th>
+                    <Th>Name</Th>
+                    <Th>Region</Th>
+                    <Th>Population</Th>
+                  </tr>
+                </TableHead>
+                <TableBody>
+                  {displayedCountries.map((country) => {
+                    const isSelected = selectedCountries.some(
+                      (c) => c.cca3 === country.cca3
+                    );
+                    const pickDisabled = !isSelected && selectedCountries.length >= 2;
+                    return (
+                      <TableRow
+                        key={country.cca3}
+                        onClick={() => handleRowClick(country)}
+                      >
+                        <Td>
+                          <PickButton
+                            onClick={(e) => toggleSelectCountry(e, country)}
+                            $selected={isSelected}
+                            $disabledPick={pickDisabled}
+                            disabled={pickDisabled}
+                          >
+                            {isSelected && <MdCheckCircleOutline color="white" />}
+                          </PickButton>
+                        </Td>
+                        <Td>
+                          <FlagImage
+                            src={country.flags.png}
+                            alt={country.flags.alt}
+                          />
+                        </Td>
+                        <TextTd>{country.name.common}</TextTd>
+                        <TextTd>{country.region}</TextTd>
+                        <TextTd>
+                          {country.population.toLocaleString()}
+                        </TextTd>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </StyledTable>
+            </TableContainer>
+            {filteredCountries.length === 0 && (
+              <NoResults>No countries found for "{searchTerm}"</NoResults>
+            )}
+            {filteredCountries.length > pageSize && (
+              <PaginationContainer>
+                <PaginationButton
+                  onClick={() => setCurrentPage((prev) => prev - 1)}
+                  disabled={currentPage === 0}
+                >
+                  Previous
+                </PaginationButton>
+                <PaginationInfo>
+                  Page {currentPage + 1} of {totalPages}
+                </PaginationInfo>
+                <PaginationButton
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  disabled={currentPage + 1 >= totalPages}
+                >
+                  Next
+                </PaginationButton>
+              </PaginationContainer>
+            )}
+          </ContentContainer>
+          {/* Comparison Modal */}
+          {isModalOpen && (
+            <ModalOverlay>
+              <ModalBackdrop onClick={() => setIsModalOpen(false)} />
+              <ModalContent>
+                <ModalHeader>
+                  <ModalTitle>Country Comparison</ModalTitle>
+                  <CloseButton onClick={() => setIsModalOpen(false)}>
+                    <MdClose size={24} color="#2563eb" />
+                  </CloseButton>
+                </ModalHeader>
+                <ModalBody>
+                  <ModalContentFlex>
+                    {selectedCountries.map((country) => (
+                      <CountryCard key={country.cca3}>
+                        <CardHeader>
+                          <ModalFlagImage
+                            src={country.flags.png}
+                            alt={country.flags.alt}
+                          />
+                          <CardTitle>{country.name.common}</CardTitle>
+                        </CardHeader>
+                        <CardBody>
+                          <CardText>
+                            <CardLabel>Population:</CardLabel>{' '}
+                            {country.population.toLocaleString()}
+                          </CardText>
+                          <CardText>
+                            <CardLabel>Area:</CardLabel>{' '}
+                            {country.area.toLocaleString()} km²
+                          </CardText>
+                          <CardText>
+                            <CardLabel>GDP:</CardLabel>{' '}
+                            {country.gdp?.toLocaleString()}
+                          </CardText>
+                        </CardBody>
+                      </CountryCard>
+                    ))}
+                  </ModalContentFlex>
+                </ModalBody>
+              </ModalContent>
+            </ModalOverlay>
+          )}
+          <Footer>
+            &copy; {new Date().getFullYear()} Global Explorer. All rights reserved.
+          </Footer>
+        </PageContainer>
       )}
-
-      <footer className="mt-10 text-center text-gray-500 text-sm bg-blue-100 p-4 rounded-md">
-        &copy; {new Date().getFullYear()} Global Explorer. All rights reserved.
-      </footer>
-    </div>
+    </>
   );
 };
 

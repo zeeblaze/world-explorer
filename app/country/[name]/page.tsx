@@ -2,17 +2,42 @@
 
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ApolloClient, InMemoryCache, ApolloProvider, gql, useQuery } from '@apollo/client';
-import { RestLink } from 'apollo-link-rest';
 import {
-  MdError,
-  MdFlag,
-  MdLocationOn,
-  MdPeople,
-  MdLandscape,
-  MdHome,
-  MdArrowBack,
-} from 'react-icons/md';
+  ApolloClient,
+  InMemoryCache,
+  ApolloProvider,
+  gql,
+  useQuery,
+} from '@apollo/client';
+import { RestLink } from 'apollo-link-rest';
+import { MdArrowBack, MdHome, MdLocationOn, MdPeople, MdLandscape, MdFlag } from 'react-icons/md';
+
+import {
+  LoadingContainer,
+  Spinner,
+  LoadingText,
+  ErrorContainer,
+  ErrorText,
+  NotFoundContainer,
+  NotFoundText,
+  ErrorIcon,
+  PageContainer,
+  Container,
+  BackButton,
+  ContentCard,
+  Title,
+  GridContainer,
+  ImageWrapper,
+  FlagImage,
+  CoatOfArmsContainer,
+  CoatOfArmsTitle,
+  CoatOfArmsImage,
+  DetailsContainer,
+  DetailRow,
+  IconWrapper,
+  Label,
+  CenterColumn,
+} from '@/styles/countryPage.styled';
 
 // Set up the RestLink with the REST Countries API base URI
 const restLink = new RestLink({
@@ -79,20 +104,20 @@ const CountryPageContent: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-white"></div>
-          <div className="mt-4 text-xl font-semibold">Loading country details...</div>
-        </div>
-      </div>
+      <LoadingContainer>
+        <CenterColumn>
+          <Spinner />
+          <LoadingText>Loading country details...</LoadingText>
+        </CenterColumn>
+      </LoadingContainer>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-r from-red-500 to-pink-500 text-white">
-        <div className="text-xl font-semibold">Error: {error.message}</div>
-      </div>
+      <ErrorContainer>
+        <ErrorText>Error: {error.message}</ErrorText>
+      </ErrorContainer>
     );
   }
 
@@ -100,94 +125,82 @@ const CountryPageContent: React.FC = () => {
 
   if (!country) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-center">
-          <MdError className="text-red-500 text-6xl mx-auto" />
-          <p className="mt-4 text-xl text-gray-600">Country not found.</p>
+      <NotFoundContainer>
+        <div>
+          <ErrorIcon />
+          <NotFoundText>Country not found.</NotFoundText>
         </div>
-      </div>
+      </NotFoundContainer>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-10">
-      <div className="container mx-auto">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center mb-8 px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 transition"
-        >
-          <MdArrowBack className="mr-2" />
+    <PageContainer>
+      <Container>
+        <BackButton onClick={() => router.back()}>
+          <MdArrowBack style={{ marginRight: '8px' }} />
           Back to Countries
-        </button>
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <h1 className="text-4xl font-bold text-blue-600 mb-6">
-            {country.name.official}
-          </h1>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="flex flex-col items-center justify-center">
-              <img
-                src={country.flags.png}
-                alt={country.flags.alt}
-                className="w-full h-auto max-h-60 object-contain rounded-lg shadow-md"
-              />
+        </BackButton>
+        <ContentCard>
+          <Title>{country.name.official}</Title>
+          <GridContainer>
+            <ImageWrapper>
+              <FlagImage src={country.flags.png} alt={country.flags.alt} />
               {country.coatOfArms?.png && (
-                <div className="mt-4">
-                  <h3 className="font-semibold text-gray-700 mb-2">
-                    Coat of Arms
-                  </h3>
-                  <img
-                    src={country.coatOfArms.png}
-                    alt="Coat of Arms"
-                    className="w-40 h-auto object-contain rounded-lg shadow-md"
-                  />
-                </div>
+                <CoatOfArmsContainer>
+                  <CoatOfArmsTitle>Coat of Arms</CoatOfArmsTitle>
+                  <CoatOfArmsImage src={country.coatOfArms.png} alt="Coat of Arms" />
+                </CoatOfArmsContainer>
               )}
-            </div>
-            <div>
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <MdHome className="text-blue-500 mr-3" />
+            </ImageWrapper>
+            <DetailsContainer>
+              <DetailRow>
+                <IconWrapper>
+                  <MdHome />
+                </IconWrapper>
+                <p>
+                  <Label>Common Name:</Label> {country.name.common}
+                </p>
+              </DetailRow>
+              {country.capital && country.capital.length > 0 && (
+                <DetailRow>
+                  <IconWrapper>
+                    <MdLocationOn />
+                  </IconWrapper>
                   <p>
-                    <span className="font-bold text-gray-700">Common Name:</span>{' '}
-                    {country.name.common}
+                    <Label>Capital:</Label> {country.capital[0]}
                   </p>
-                </div>
-                {country.capital && country.capital.length > 0 && (
-                  <div className="flex items-center">
-                    <MdLocationOn className="text-blue-500 mr-3" />
-                    <p>
-                      <span className="font-bold text-gray-700">Capital:</span>{' '}
-                      {country.capital[0]}
-                    </p>
-                  </div>
-                )}
-                <div className="flex items-center">
-                  <MdPeople className="text-blue-500 mr-3" />
-                  <p>
-                    <span className="font-bold text-gray-700">Population:</span>{' '}
-                    {country.population.toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex items-center">
-                  <MdLandscape className="text-blue-500 mr-3" />
-                  <p>
-                    <span className="font-bold text-gray-700">Area:</span>{' '}
-                    {country.area.toLocaleString()} km²
-                  </p>
-                </div>
-                <div className="flex items-center">
-                  <MdFlag className="text-blue-500 mr-3" />
-                  <p>
-                    <span className="font-bold text-gray-700">Region:</span>{' '}
-                    {country.region}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                </DetailRow>
+              )}
+              <DetailRow>
+                <IconWrapper>
+                  <MdPeople />
+                </IconWrapper>
+                <p>
+                  <Label>Population:</Label> {country.population.toLocaleString()}
+                </p>
+              </DetailRow>
+              <DetailRow>
+                <IconWrapper>
+                  <MdLandscape />
+                </IconWrapper>
+                <p>
+                  <Label>Area:</Label> {country.area.toLocaleString()} km²
+                </p>
+              </DetailRow>
+              <DetailRow>
+                <IconWrapper>
+                  <MdFlag />
+                </IconWrapper>
+                <p>
+                  <Label>Region:</Label> {country.region}
+                </p>
+              </DetailRow>
+            </DetailsContainer>
+          </GridContainer>
+        </ContentCard>
+      </Container>
+    </PageContainer>
   );
 };
 
